@@ -4,7 +4,7 @@ import { IProducts } from "../models/products";
 
 exports.handler = async function (event: APIGatewayProxyEvent) {
   const products: IProducts[] = Products;
-  const id: string | undefined = event.pathParameters?.id;
+  const id: string = event.pathParameters?.id || "";
 
   if (products.length === 0) {
     return {
@@ -15,18 +15,6 @@ exports.handler = async function (event: APIGatewayProxyEvent) {
         "Access-Control-Allow-Origin": "*",
       },
       body: JSON.stringify({ message: "Products data doesn't exist" }),
-    };
-  }
-
-  if (!id) {
-    return {
-      statusCode: 400,
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({ message: "Missing 'id' parameter in request" }),
     };
   }
 
@@ -46,7 +34,7 @@ exports.handler = async function (event: APIGatewayProxyEvent) {
 
   return {
     statusCode: 200,
-    headers: { "Content-Type": "text/plain" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(product),
   };
 };

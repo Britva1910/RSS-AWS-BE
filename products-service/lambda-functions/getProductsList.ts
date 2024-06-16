@@ -7,7 +7,7 @@ exports.handler = async function (event: APIGatewayProxyEvent) {
 
   if (products.length === 0) {
     return {
-      statusCode: 400,
+      statusCode: 404,
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-cache",
