@@ -21,7 +21,7 @@ export const products: IProducts[] = [
   },
   {
     description: "Short Product Description4",
-    id: "7567ec4b-b10c-48c5-9345-fc73348a80a1",
+    id: "7567ec4b-b10c-48c5-9345-fc73348a80a4",
     price: 15,
     title: "ProductTest",
   },
@@ -33,7 +33,7 @@ export const products: IProducts[] = [
   },
   {
     description: "Short Product Description7",
-    id: "7567ec4b-b10c-45c5-9345-fc73c48a80a1",
+    id: "7567ec4b-b10c-45c5-9345-fc73c48a80a9",
     price: 15,
     title: "ProductName",
   },
