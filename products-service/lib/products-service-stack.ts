@@ -32,6 +32,12 @@ export class ProductsServiceStack extends cdk.Stack {
       handler: "getProductById.handler",
     });
 
+    const createProduct = new lambda.Function(this, "CreateProduct", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      code: lambda.Code.fromAsset("lambda-functions"),
+      handler: "createProduct.handler",
+    });
+
     const api = new apigateway.RestApi(this, "ProductsAPI", {
       restApiName: "ProductsService",
       description: "This service serves products for RSS AWS course.",
@@ -43,17 +49,28 @@ export class ProductsServiceStack extends cdk.Stack {
 
     const dynamoDbPolicy = new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
-      actions: ["dynamodb:Query", "dynamodb:Scan", "dynamodb:GetItem"],
+      actions: [
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+      ],
       resources: [productTable.tableArn, stockTable.tableArn],
     });
 
     getProductsList.addToRolePolicy(dynamoDbPolicy);
     getProductByID.addToRolePolicy(dynamoDbPolicy);
+    createProduct.addToRolePolicy(dynamoDbPolicy);
 
     const apiProducts = api.root.addResource("products");
     apiProducts.addMethod(
       "GET",
       new apigateway.LambdaIntegration(getProductsList)
+    );
+
+    apiProducts.addMethod(
+      "POST",
+      new apigateway.LambdaIntegration(createProduct)
     );
 
     const apiProductById = apiProducts.addResource("{id}");
