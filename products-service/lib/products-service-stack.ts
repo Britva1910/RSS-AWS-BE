@@ -1,11 +1,24 @@
 import * as cdk from "aws-cdk-lib";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import { aws_dynamodb as dynamodb } from "aws-cdk-lib";
+import { aws_iam as iam } from "aws-cdk-lib";
 import { Construct } from "constructs";
 
 export class ProductsServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const productTable = dynamodb.Table.fromTableName(
+      this,
+      "ImportedProductsTable",
+      "Product"
+    );
+    const stockTable = dynamodb.Table.fromTableName(
+      this,
+      "ImportedStocksTable",
+      "Stock"
+    );
 
     const getProductsList = new lambda.Function(this, "GetProductsList", {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -27,6 +40,15 @@ export class ProductsServiceStack extends cdk.Stack {
         allowMethods: apigateway.Cors.ALL_METHODS,
       },
     });
+
+    const dynamoDbPolicy = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ["dynamodb:Query", "dynamodb:Scan", "dynamodb:GetItem"],
+      resources: [productTable.tableArn, stockTable.tableArn],
+    });
+
+    getProductsList.addToRolePolicy(dynamoDbPolicy);
+    getProductByID.addToRolePolicy(dynamoDbPolicy);
 
     const apiProducts = api.root.addResource("products");
     apiProducts.addMethod(
