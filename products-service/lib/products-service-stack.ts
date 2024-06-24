@@ -24,18 +24,28 @@ export class ProductsServiceStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       code: lambda.Code.fromAsset("lambda-functions"),
       handler: "getProductsList.handler",
+      environment: {
+        PRODUCTS_TABLE_NAME: productTable.tableName,
+      },
     });
 
     const getProductByID = new lambda.Function(this, "GetProductByID", {
       runtime: lambda.Runtime.NODEJS_20_X,
       code: lambda.Code.fromAsset("lambda-functions"),
       handler: "getProductById.handler",
+      environment: {
+        PRODUCTS_TABLE_NAME: productTable.tableName,
+      },
     });
 
     const createProduct = new lambda.Function(this, "CreateProduct", {
       runtime: lambda.Runtime.NODEJS_20_X,
       code: lambda.Code.fromAsset("lambda-functions"),
       handler: "createProduct.handler",
+      environment: {
+        PRODUCTS_TABLE_NAME: productTable.tableName,
+        STOCKS_TABLE_NAME: stockTable.tableName,
+      },
     });
 
     const api = new apigateway.RestApi(this, "ProductsAPI", {
