@@ -1,47 +1,49 @@
 import { APIGatewayProxyEvent } from "aws-lambda";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  TransactWriteCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { IProducts } from "../models/products";
 import { randomUUID } from "crypto";
+import { validateProductInput } from "./utils/validator";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-const createProduct = async (product: IProducts) => {
-  const command = new PutCommand({
-    TableName: "Product",
-    Item: {
-      description: product.description,
-      id: product.id,
-      price: product.price,
-      title: product.title,
-    },
-  });
+const createProduct = async (product: any) => {
+  const id = randomUUID();
+  const newProduct = {
+    id: id,
+    description: product.description,
+    title: product.title,
+    price: product.price,
+  };
 
+  const newCount = {
+    product_id: id,
+    count: product.count,
+  };
+
+  const params = {
+    TransactItems: [
+      {
+        Put: {
+          TableName: "Product",
+          Item: newProduct,
+        },
+      },
+      {
+        Put: {
+          TableName: "Stock",
+          Item: newCount,
+        },
+      },
+    ],
+  };
+
+  const command = new TransactWriteCommand(params);
   const response = await docClient.send(command);
   return response;
-};
-
-const validateProductInput = (product: any): boolean => {
-  if (!product || typeof product !== "object") {
-    return false;
-  }
-  if (typeof product.title !== "string" || product.title.length === 0) {
-    return false;
-  }
-
-  if (
-    typeof product.description !== "string" ||
-    product.description.length === 0
-  ) {
-    return false;
-  }
-
-  if (typeof product.price !== "number" || product.price < 0) {
-    return false;
-  }
-
-  return true;
 };
 
 exports.handler = async function (event: APIGatewayProxyEvent) {
@@ -64,11 +66,12 @@ exports.handler = async function (event: APIGatewayProxyEvent) {
   }
 
   if (validateProductInput(productData)) {
-    const newProduct: IProducts = {
+    const newProduct = {
       id: randomUUID(),
       title: productData.title,
       description: productData.description,
       price: productData.price,
+      count: productData.count,
     };
 
     try {
@@ -91,7 +94,7 @@ exports.handler = async function (event: APIGatewayProxyEvent) {
           "Cache-Control": "no-cache",
           "Access-Control-Allow-Origin": "*",
         },
-        body: JSON.stringify({ error: "Internal Server Error" }),
+        body: JSON.stringify(error),
       };
     }
   } else {
