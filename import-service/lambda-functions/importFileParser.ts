@@ -1,4 +1,4 @@
-import {GetObjectCommand, S3Client} from "@aws-sdk/client-s3";
+import {CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {S3Event} from 'aws-lambda';
 import * as csv from "csv-parser";
 import {Readable} from "stream";
@@ -37,6 +37,22 @@ exports.handler = async function (event: S3Event) {
                     reject(error);
                 });
         });
+
+        const destinationKey = key.replace("uploaded", "parsed");
+
+        const copyCommand = new CopyObjectCommand({
+            Bucket: BUCKET_NAME,
+            CopySource: BUCKET_NAME + "/" + key,
+            Key: destinationKey
+        });
+
+        const deleteCommand = new DeleteObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: key
+        })
+
+        const copyData = await s3Client.send(copyCommand);
+        await s3Client.send(deleteCommand);
     } catch (err) {
         console.log("Error processing S3 event:", err);
     }
