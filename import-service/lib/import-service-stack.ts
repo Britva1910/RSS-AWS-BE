@@ -8,7 +8,7 @@ export class ImportServiceStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
-        const bucket = new s3.Bucket(this, 'import-service-rss');
+        const bucket = s3.Bucket.fromBucketName(this, 'ImportBucket', 'import-service-rss');
 
         const importProductsFile = new lambda.Function(this, "importProductsFile", {
             runtime: lambda.Runtime.NODEJS_20_X,
@@ -28,9 +28,15 @@ export class ImportServiceStack extends cdk.Stack {
                 allowOrigins: apigateway.Cors.ALL_ORIGINS,
                 allowMethods: apigateway.Cors.ALL_METHODS,
             },
+            cloudWatchRole: true,
         });
 
         const apiImportProductsFile = api.root.addResource("import")
-        apiImportProductsFile.addMethod("GET", new apigateway.LambdaIntegration(importProductsFile))
+
+        apiImportProductsFile.addMethod("GET", new apigateway.LambdaIntegration(importProductsFile), {
+            requestParameters: {
+                'method.request.querystring.name': true
+            }
+        })
     }
 }
