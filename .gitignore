@@ -129,16 +129,23 @@ dist
 .yarn/install-state.gz
 .pnp.*
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 cdk.out/
 *.js
 *.d.ts
 
 =======
+=======
+>>>>>>> 2038119f1527a80271801526f0129d8cee8440a5
 .cdk.staging
 cdk.out
 .idea
 *.js
 !jest.config.js
+<<<<<<< HEAD
 *.d.ts
 >>>>>>> 2038119 (feat: implement catalogBatchProcess handler)
+=======
+*.d.ts
+>>>>>>> 2038119f1527a80271801526f0129d8cee8440a5

@@ -39,6 +39,7 @@ export class ProductsServiceStack extends cdk.Stack {
       },
     });
 
+<<<<<<< HEAD
     const createProduct = new lambda.Function(this, "CreateProduct", {
       runtime: lambda.Runtime.NODEJS_20_X,
       code: lambda.Code.fromAsset("lambda-functions"),
@@ -49,6 +50,8 @@ export class ProductsServiceStack extends cdk.Stack {
       },
     });
 
+=======
+>>>>>>> 2038119f1527a80271801526f0129d8cee8440a5
     const catalogBatchProcess = new lambda.Function(
       this,
       "CatalogBatchProcess",
@@ -69,6 +72,7 @@ export class ProductsServiceStack extends cdk.Stack {
     });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     const dynamoDbPolicy = new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: [
@@ -86,6 +90,9 @@ export class ProductsServiceStack extends cdk.Stack {
 =======
     const catalogItemsQueue = new cdk.aws_sqs.Queue(this, "catalogItemsQueue");
 >>>>>>> 2038119 (feat: implement catalogBatchProcess handler)
+=======
+    const catalogItemsQueue = new cdk.aws_sqs.Queue(this, "catalogItemsQueue");
+>>>>>>> 2038119f1527a80271801526f0129d8cee8440a5
 
     const apiProducts = api.root.addResource("products");
     apiProducts.addMethod(
