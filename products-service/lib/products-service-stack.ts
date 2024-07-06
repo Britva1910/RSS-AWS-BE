@@ -55,7 +55,7 @@ export class ProductsServiceStack extends cdk.Stack {
       {
         runtime: lambda.Runtime.NODEJS_20_X,
         code: lambda.Code.fromAsset("lambda-functions"),
-        handler: "catalogBatchProcess",
+        handler: "catalogBatchProcess.handler",
       }
     );
 
@@ -82,6 +82,7 @@ export class ProductsServiceStack extends cdk.Stack {
     getProductsList.addToRolePolicy(dynamoDbPolicy);
     getProductByID.addToRolePolicy(dynamoDbPolicy);
     createProduct.addToRolePolicy(dynamoDbPolicy);
+    catalogBatchProcess.addToRolePolicy(dynamoDbPolicy);
 
     const catalogItemsQueue = new cdk.aws_sqs.Queue(this, "catalogItemsQueue");
 
