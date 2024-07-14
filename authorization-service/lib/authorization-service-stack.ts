@@ -7,7 +7,7 @@ export class AuthorizationServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const basicAuthorizer = new lambda.Function(this, "BasicAuthorizer", {
+    const basicAuthorizer = new lambda.Function(this, "basicAuthorizer", {
       runtime: lambda.Runtime.NODEJS_20_X,
       code: lambda.Code.fromAsset("lambda-functions"),
       handler: "basicAuthorizer.handler",
@@ -16,5 +16,14 @@ export class AuthorizationServiceStack extends cdk.Stack {
     basicAuthorizer.grantInvoke(
       new ServicePrincipal("apigateway.amazonaws.com")
     );
+
+    new cdk.CfnOutput(this, "BasicAuthorizer", {
+      value: basicAuthorizer.functionArn,
+      exportName: "BasicAuthorizerArn",
+    });
+    new cdk.CfnOutput(this, "BasicAuthorizerRole", {
+      value: basicAuthorizer.role!.roleArn,
+      exportName: "BasicAuthorizerArnRole",
+    });
   }
 }

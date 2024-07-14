@@ -3,6 +3,10 @@ import {
   APIGatewayTokenAuthorizerEvent,
   APIGatewayAuthorizerResult,
 } from "aws-lambda";
+import * as dotenv from "dotenv";
+
+dotenv.config();
+const USER_NAME = "Britva1910";
 
 export const handler = async (
   event: APIGatewayTokenAuthorizerEvent
@@ -10,29 +14,35 @@ export const handler = async (
   console.log("Event: ", event);
   try {
     if (!event.authorizationToken) {
-      return generatePolicy("user", Effect.DENY, event.methodArn, 401);
+      return generatePolicy("user", Effect.DENY, event.methodArn);
     }
-
+    console.log("event.authorizationToken", event.authorizationToken);
     const token = event.authorizationToken.split(" ")[1];
+    console.log("Token", token);
     const decoded = Buffer.from(token, "base64").toString("utf-8");
+    console.log("Decoder", decoded);
     const [username, password] = decoded.split(":");
-    const basePasword = process.env[username];
+    const basePasword = process.env[USER_NAME];
+    console.log("Base password", basePasword);
+    console.log("User password", password);
 
-    if (password === basePasword) {
+    if (basePasword && password === basePasword) {
+      console.log("Ok auth");
       return generatePolicy("user", Effect.ALLOW, event.methodArn);
     } else {
-      return generatePolicy("user", Effect.DENY, event.methodArn, 403);
+      console.log("Bad auth");
+      return generatePolicy("user", Effect.DENY, event.methodArn);
     }
   } catch (error) {
-    return generatePolicy("user", Effect.DENY, event.methodArn, 401);
+    console.log("Error", error);
+    return generatePolicy("user", Effect.DENY, event.methodArn);
   }
 };
 
 const generatePolicy = (
   principalId: string,
   effect: Effect,
-  resource: string,
-  statusCode?: number
+  resource: string
 ): APIGatewayAuthorizerResult => {
   const authResponse: APIGatewayAuthorizerResult = {
     principalId,
@@ -45,9 +55,6 @@ const generatePolicy = (
           Resource: resource,
         },
       ],
-    },
-    context: {
-      statusCode: statusCode?.toString() || "200",
     },
   };
 
