@@ -1,3 +1,4 @@
+import { Role } from "aws-cdk-lib/aws-iam";
 import * as dotenv from "dotenv";
 import * as path from "path";
 import * as cdk from "aws-cdk-lib";
@@ -8,9 +9,11 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import * as s3notification from "aws-cdk-lib/aws-s3-notifications";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 
+
 export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
     /*     const envFilePath = path.resolve(__dirname, "..", ".env");
     dotenv.config({ path: envFilePath });
  */
@@ -43,12 +46,13 @@ export class ImportServiceStack extends cdk.Stack {
       handler: "importFileParser.handler",
       environment: {
         BUCKET_NAME: bucket.bucketName,
-        SQS_URL: catalogItemsQueue.queueUrl,
       },
     });
 
+        SQS_URL: catalogItemsQueue.queueUrl,
+      },
+    });
     catalogItemsQueue.grantSendMessages(importFileParser);
-
     bucket.grantReadWrite(importProductsFile);
     bucket.grantReadWrite(importFileParser);
 
@@ -60,10 +64,41 @@ export class ImportServiceStack extends cdk.Stack {
 
     const api = new apigateway.RestApi(this, "ImportProductAPI", {
       restApiName: "ImportService",
+      cloudWatchRole: true,
       description: "This service import products for RSS AWS course.",
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
         allowMethods: apigateway.Cors.ALL_METHODS,
+        allowHeaders: apigateway.Cors.DEFAULT_HEADERS,
+        allowCredentials: true,
+      },
+    });
+
+    const basicAuthorizerArn = cdk.Fn.importValue("BasicAuthorizerArn");
+    const basicAuthorizerArnRole = cdk.Fn.importValue("BasicAuthorizerArnRole");
+    const basicAuthorizerRole = Role.fromRoleArn(
+      this,
+      "BasicAuthorizerRole",
+      basicAuthorizerArnRole
+    );
+    const basicAuthorizer = lambda.Function.fromFunctionAttributes(
+      this,
+      "basicAuthorizer",
+      {
+        functionArn: basicAuthorizerArn,
+        role: basicAuthorizerRole,
+      }
+    );
+
+    const authorizer = new apigateway.TokenAuthorizer(
+      this,
+      "APIGatewayAuthorizer",
+      {
+        handler: basicAuthorizer,
+        identitySource: apigateway.IdentitySource.header("Authorization"),
+      }
+    );
+
       },
     });
 
@@ -73,10 +108,34 @@ export class ImportServiceStack extends cdk.Stack {
       "GET",
       new apigateway.LambdaIntegration(importProductsFile),
       {
+
+        authorizer: authorizer,
+        authorizationType: apigateway.AuthorizationType.CUSTOM,
         requestParameters: {
           "method.request.querystring.name": true,
         },
       }
     );
+    api.addGatewayResponse("GatewayResponseUnauthorized", {
+      type: apigateway.ResponseType.UNAUTHORIZED,
+      responseHeaders: {
+        "Access-Control-Allow-Origin": "'*'",
+        "Access-Control-Allow-Headers":
+          "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+        "Access-Control-Allow-Methods": "'GET,PUT'",
+      },
+      statusCode: "401",
+    });
+
+    api.addGatewayResponse("GatewayResponseAccessDenied", {
+      type: cdk.aws_apigateway.ResponseType.ACCESS_DENIED,
+      responseHeaders: {
+        "Access-Control-Allow-Origin": "'*'",
+        "Access-Control-Allow-Headers":
+          "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+        "Access-Control-Allow-Methods": "'GET,PUT'",
+      },
+      statusCode: "403",
+    });
   }
 }

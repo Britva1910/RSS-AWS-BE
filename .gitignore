@@ -134,6 +134,7 @@ dist
 cdk.out/
 *.js
 *.d.ts
+.idea
 
 =======
 =======
