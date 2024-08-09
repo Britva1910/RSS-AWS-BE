@@ -1,14 +1,29 @@
-import * as cdk from "aws-cdk-lib";
 import { Role } from "aws-cdk-lib/aws-iam";
+import * as dotenv from "dotenv";
+import * as path from "path";
+import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as s3notification from "aws-cdk-lib/aws-s3-notifications";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+
 
 export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    /*     const envFilePath = path.resolve(__dirname, "..", ".env");
+    dotenv.config({ path: envFilePath });
+ */
+    const queueArn =
+      "arn:aws:sqs:us-east-1:381492131758:ProductsServiceStack-catalogItemsQueue79451959-UkcbcioqAaCV";
+    const catalogItemsQueue = sqs.Queue.fromQueueArn(
+      this,
+      "catalogItemsQueue",
+      queueArn
+    );
 
     const bucket = s3.Bucket.fromBucketName(
       this,
@@ -34,6 +49,10 @@ export class ImportServiceStack extends cdk.Stack {
       },
     });
 
+        SQS_URL: catalogItemsQueue.queueUrl,
+      },
+    });
+    catalogItemsQueue.grantSendMessages(importFileParser);
     bucket.grantReadWrite(importProductsFile);
     bucket.grantReadWrite(importFileParser);
 
@@ -80,12 +99,16 @@ export class ImportServiceStack extends cdk.Stack {
       }
     );
 
+      },
+    });
+
     const apiImportProductsFile = api.root.addResource("import");
 
     apiImportProductsFile.addMethod(
       "GET",
       new apigateway.LambdaIntegration(importProductsFile),
       {
+
         authorizer: authorizer,
         authorizationType: apigateway.AuthorizationType.CUSTOM,
         requestParameters: {
@@ -93,7 +116,6 @@ export class ImportServiceStack extends cdk.Stack {
         },
       }
     );
-
     api.addGatewayResponse("GatewayResponseUnauthorized", {
       type: apigateway.ResponseType.UNAUTHORIZED,
       responseHeaders: {

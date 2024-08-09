@@ -5,14 +5,17 @@ import {
   GetObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import * as csv from "csv-parser";
+import csv = require("csv-parser");
 import { Readable } from "stream";
+import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 
 const BUCKET_NAME = process.env.BUCKET_NAME!;
+const SQS_URL = process.env.SQS_URL;
 const s3Client = new S3Client({});
 
 exports.handler = async function (event: S3Event) {
   const key = event.Records[0].s3.object.key;
+  const products: any = [];
 
   try {
     const command = new GetObjectCommand({
@@ -28,14 +31,11 @@ exports.handler = async function (event: S3Event) {
 
     const stream = response.Body as Readable;
 
-    const results: any[] = [];
-
     await new Promise<void>((resolve, reject) => {
       stream
         .pipe(csv())
-        .on("data", (data) => results.push(data))
+        .on("data", (data) => products.push(data))
         .on("end", () => {
-          console.log("Result stream: ", results);
           resolve();
         })
         .on("error", (error) => {
@@ -60,5 +60,19 @@ exports.handler = async function (event: S3Event) {
     await s3Client.send(deleteCommand);
   } catch (err) {
     console.log("Error processing S3 event:", err);
+  }
+
+  const sqsClient = new SQSClient({});
+  console.log("SQS URL: ", SQS_URL);
+  const sqsCommand = new SendMessageCommand({
+    QueueUrl: SQS_URL,
+    MessageBody: JSON.stringify(products),
+  });
+
+  try {
+    const data = await sqsClient.send(sqsCommand);
+    console.log("SQS message success", data);
+  } catch (error: any) {
+    console.log("SQS message error", error);
   }
 };
