@@ -1,6 +1,12 @@
 {
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
-    "csv-parser": "^3.0.0"
+    "@nestjs/axios": "^3.0.2",
+    "@nestjs/config": "^3.2.3",
+    "axios": "^1.7.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "csv-parser": "^3.0.0",
+    "dotenv": "^16.4.5"
   }
 }
